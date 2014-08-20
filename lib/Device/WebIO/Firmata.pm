@@ -20,11 +20,15 @@ has 'output_pin_count' => (
     is      => 'ro',
     default => sub { 128 },
 );
+has 'pwm_pin_count' => (
+    is      => 'ro',
+    default => sub { 128 },
+);
 
 with 'Device::WebIO::Device::DigitalOutput';
 with 'Device::WebIO::Device::DigitalInput';
+with 'Device::WebIO::Device::PWM';
 # TODO
-#with 'Device::WebIO::Device::PWM';
 #with 'Device::WebIO::Device::ADC';
 
 
@@ -66,6 +70,31 @@ sub set_as_input
     my ($self, $pin) = @_;
     $self->_firmata->pin_mode( $pin, PIN_INPUT );
     return 1;
+}
+
+
+sub pwm_bit_resolution
+{
+    my ($self, $pin) = @_;
+    # Arduino Uno bit resolution.  TODO Arduino Mega has 8-bit resolution on 
+    # some pins.  Need to account for differences like that.
+    return 8;
+}
+
+{
+    my %did_set_pwm;
+    sub pwm_output_int
+    {
+        my ($self, $pin, $value) = @_;
+        my $firmata = $self->_firmata;
+
+        $firmata->pin_mode( $pin, PIN_PWM )
+            if ! exists $did_set_pwm{$pin};
+        $did_set_pwm{$pin} = 1;
+
+        $firmata->analog_write( $pin, $value );
+        return 1;
+    }
 }
 
 
