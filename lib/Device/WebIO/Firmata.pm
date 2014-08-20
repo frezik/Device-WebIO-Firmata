@@ -28,8 +28,7 @@ has 'pwm_pin_count' => (
 with 'Device::WebIO::Device::DigitalOutput';
 with 'Device::WebIO::Device::DigitalInput';
 with 'Device::WebIO::Device::PWM';
-# TODO
-#with 'Device::WebIO::Device::ADC';
+with 'Device::WebIO::Device::ADC';
 
 
 sub BUILDARGS
@@ -76,8 +75,7 @@ sub set_as_input
 sub pwm_bit_resolution
 {
     my ($self, $pin) = @_;
-    # Arduino Uno bit resolution.  TODO Arduino Mega has 8-bit resolution on 
-    # some pins.  Need to account for differences like that.
+    # Arduino Uno bit resolution
     return 8;
 }
 
@@ -94,6 +92,43 @@ sub pwm_bit_resolution
 
         $firmata->analog_write( $pin, $value );
         return 1;
+    }
+}
+
+sub adc_bit_resolution
+{
+    my ($self, $pin) = @_;
+    # Arduino Uno bit resolution
+    return 10;
+}
+
+sub adc_volt_ref
+{
+    my ($self, $pin) = @_;
+    # Arduino Uno, except when it's 3.3V.  This is a rather large assumption. 
+    # TODO fix this
+    return 5.0;
+}
+
+sub adc_pin_count
+{
+    my ($self, $pin) = @_;
+    return 128;
+}
+
+{
+    my %did_set_adc;
+    sub adc_input_int
+    {
+        my ($self, $pin) = @_;
+        my $firmata = $self->_firmata;
+
+        $firmata->pin_mode( $pin, PIN_ANALOG )
+            if ! exists $did_set_adc{$pin};
+        $did_set_adc{$pin} = 1;
+
+        my $value = $firmata->analog_write( $pin );
+        return $value;
     }
 }
 
