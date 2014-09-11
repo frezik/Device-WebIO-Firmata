@@ -47,6 +47,15 @@ has 'pwm_pin_count' => (
     is      => 'ro',
     default => sub { 128 },
 );
+has 'pin_desc' => (
+    is => 'ro',
+    # TODO this is based on the Uno's pin header.  Would be nice to have 
+    # a configurable option for different boards.
+    default => sub {[qw{
+        SCL SDA AREF GND 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+        IOREF RESET 33V 50V GND GND VIN A0 A1 A2 A3 A4 A5
+    }]},
+);
 
 with 'Device::WebIO::Device::DigitalOutput';
 with 'Device::WebIO::Device::DigitalInput';
@@ -154,6 +163,34 @@ sub adc_pin_count
         return $value;
     }
 }
+
+
+sub all_desc
+{
+    my ($self) = @_;
+    my $pin_count = $self->input_pin_count;
+    return {
+        UART    => 0,
+        SPI     => 0,
+        I2C     => 0,
+        ONEWIRE => 0,
+        GPIO => {
+            map {
+                # TODO _pin_mode entry
+                my $function = $self->{'_pin_mode'}[$_];
+                my $value = $function eq 'IN'
+                    ? $self->input_pin( $_ ) 
+                    : $self->{'_output_pin_value'}[$_];
+                $_ => {
+                    function => $function,
+                    value    => $value,
+                };
+            } 0 .. ($pin_count - 1)
+        },
+    };
+}
+
+
 
 
 1;
