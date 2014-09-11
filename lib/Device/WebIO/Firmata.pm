@@ -56,6 +56,9 @@ has 'pin_desc' => (
         IOREF RESET 33V 50V GND GND VIN A0 A1 A2 A3 A4 A5
     }]},
 );
+has '_pin_mode' => (
+    is => 'ro',
+);
 
 with 'Device::WebIO::Device::DigitalOutput';
 with 'Device::WebIO::Device::DigitalInput';
@@ -71,6 +74,8 @@ sub BUILDARGS
     my $dev = Device::Firmata->open( $port )
         or die "Could not connect to Firmata Server on '$port'\n";
     $args->{'_firmata'} = $dev;
+
+    $args->{'_pin_mode'} = [ ('IN') x 128 ];
 
     return $args;
 }
@@ -92,6 +97,7 @@ sub input_pin
 sub set_as_output
 {
     my ($self, $pin) = @_;
+    $self->_pin_mode->[$pin] = 'OUT';
     $self->_firmata->pin_mode( $pin, PIN_OUTPUT );
     return 1;
 }
@@ -99,6 +105,7 @@ sub set_as_output
 sub set_as_input
 {
     my ($self, $pin) = @_;
+    $self->_pin_mode->[$pin] = 'IN';
     $self->_firmata->pin_mode( $pin, PIN_INPUT );
     return 1;
 }
@@ -176,8 +183,7 @@ sub all_desc
         ONEWIRE => 0,
         GPIO => {
             map {
-                # TODO _pin_mode entry
-                my $function = $self->{'_pin_mode'}[$_];
+                my $function = $self->_pin_mode->[$_];
                 my $value = $function eq 'IN'
                     ? $self->input_pin( $_ ) 
                     : $self->{'_output_pin_value'}[$_];
