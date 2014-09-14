@@ -110,6 +110,20 @@ sub set_as_input
     return 1;
 }
 
+sub is_set_input
+{
+    my ($self, $pin) = @_;
+    return 1 if $self->_pin_mode->[$pin] == 'IN';
+    return 0;
+}
+
+sub is_set_output
+{
+    my ($self, $pin) = @_;
+    return 1 if $self->_pin_mode->[$pin] == 'OUT';
+    return 0;
+}
+
 
 sub pwm_bit_resolution
 {
